@@ -203,9 +203,10 @@ impl<'a> Number<'a> {
         let publish = self.0.with_data(|data| {
             let storage = data.storage.as_number_mut();
             let timestamp = embassy_time::Instant::now();
-            let publish = match &storage.command {
-                Some(command) => command.value != value,
-                None => true,
+            let publish = match (storage.command_policy, &storage.command) {
+                (CommandPolicy::Manual, _) => true,
+                (CommandPolicy::PublishState, Some(command)) => command.value != value,
+                (CommandPolicy::PublishState, None) => true,
             };
             storage.state = Some(NumberState { value, timestamp });
             storage.command = Some(NumberCommand { value, timestamp });
