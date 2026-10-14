@@ -412,7 +412,7 @@ pub struct DeviceResources<const N :usize = 16> {
 }
 
 impl<const N: usize> DeviceResources<N> {
-    const ENTITY_LIMIT: usize = N;
+    pub const ENTITY_LIMIT: usize = N;
 }
 
 impl<const N: usize>  Default for DeviceResources<N> {
