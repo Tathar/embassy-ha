@@ -75,27 +75,6 @@ async fn ha_task(stack: embassy_net::Stack<'static>, device: embassy_ha::Device<
 }
 ```
 
-## Configuration
-
-Each device supports 16 entities by default. Override this limit at build time:
-
-```bash
-EMBASSY_HA_ENTITY_LIMIT=32 cargo build
-```
-
-Or set it in the consuming application's/workspace's `.cargo/config.toml`
-(not `Cargo.toml`; Cargo does not load configuration from dependencies):
-
-```toml
-[env]
-EMBASSY_HA_ENTITY_LIMIT = "32"
-```
-
-The value must be a positive integer. All devices using the compiled library
-share this capacity, and larger values increase memory usage per device.
-Creating more entities than the configured limit panics.
-The effective limit is available as `embassy_ha::config::ENTITY_LIMIT`.
-
 ## Examples
 
 The repository includes several examples demonstrating different entity types. To run an example:

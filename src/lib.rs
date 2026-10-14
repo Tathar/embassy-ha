@@ -72,27 +72,6 @@
 //! }
 //! ```
 //!
-//! # Configuration
-//!
-//! Each device supports 16 entities by default. Override this limit at build time:
-//!
-//! ```bash
-//! EMBASSY_HA_ENTITY_LIMIT=32 cargo build
-//! ```
-//!
-//! Or set it in the consuming application's/workspace's `.cargo/config.toml`
-//! (not `Cargo.toml`; Cargo does not load configuration from dependencies):
-//!
-//! ```toml
-//! [env]
-//! EMBASSY_HA_ENTITY_LIMIT = "32"
-//! ```
-//!
-//! The value must be a positive integer. All devices using the compiled library
-//! share this capacity, and larger values increase memory usage per device.
-//! Creating more entities than the configured limit panics.
-//! The effective limit is available as [`config::ENTITY_LIMIT`].
-//!
 //! # Examples
 //!
 //! The repository includes several examples demonstrating different entity types. To run an example:
@@ -134,11 +113,6 @@ mod log;
 use log::Format;
 
 pub mod constants;
-
-/// Build-time limits configured through environment variables.
-pub mod config {
-    include!(concat!(env!("OUT_DIR"), "/config.rs"));
-}
 
 mod binary_state;
 pub use binary_state::*;
@@ -429,19 +403,23 @@ impl<'a> DeviceBuffers<'a> {
     }
 }
 
-pub struct DeviceResources {
+pub struct DeviceResources<const N :usize = 16> {
     waker: AtomicWaker,
-    entities: [RefCell<Option<EntityData>>; config::ENTITY_LIMIT],
+    entities: [RefCell<Option<EntityData>>; N],
 
     mqtt_resources: mqtt::ClientResources,
     buffers: DeviceBuffersOwned,
 }
 
-impl Default for DeviceResources {
+impl<const N: usize> DeviceResources<N> {
+    const ENTITY_LIMIT: usize = N;
+}
+
+impl<const N: usize>  Default for DeviceResources<N> {
     fn default() -> Self {
         Self {
             waker: AtomicWaker::new(),
-            entities: [const { RefCell::new(None) }; config::ENTITY_LIMIT],
+            entities: [const { RefCell::new(None) }; N],
 
             mqtt_resources: Default::default(),
             buffers: Default::default(),
@@ -655,7 +633,10 @@ pub struct Device<'a> {
     buffers: DeviceBuffers<'a>,
 }
 
-pub fn new<'a>(resources: &'a mut DeviceResources, config: DeviceConfig) -> Device<'a> {
+pub fn new<'a, const N: usize>(
+    resources: &'a mut DeviceResources<N>,
+    config: DeviceConfig,
+) -> Device<'a> {
     Device {
         config,
         waker: &resources.waker,
